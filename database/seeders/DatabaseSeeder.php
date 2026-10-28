@@ -12,6 +12,14 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        \App\Models\User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Usuario de Prueba',
+                'password' => bcrypt('password'),
+            ]
+        );
+
         $this->call([
             CurrencySeeder::class,
         ]);
