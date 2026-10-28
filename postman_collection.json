@@ -1,0 +1,366 @@
+{
+	"info": {
+		"_postman_id": "a53e8d9c-12b3-4f5a-8b6c-9c7d4e3f2a1b",
+		"name": "Prueba Técnica Anyelis - API Catálogo y Precios Multidivisa",
+		"description": "Colección completa de endpoints para la gestión de productos, desglose financiero y precios en múltiples divisas con autenticación Bearer Token (Laravel Sanctum).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost",
+			"type": "string"
+		},
+		{
+			"key": "bearer_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "01. Autenticación",
+			"item": [
+				{
+					"name": "Login (Obtener Token Sanctum)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var data = pm.response.json();",
+									"    if (data.token) {",
+									"        pm.collectionVariables.set(\"bearer_token\", data.token);",
+									"        console.log(\"Token guardado automáticamente en la variable bearer_token:\", data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						},
+						"description": "Autentica las credenciales de un usuario y devuelve un token Bearer personal. Además, el script de prueba de esta petición guarda automáticamente el token en la variable `bearer_token` de la colección para usarlo en las peticiones protegidas."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Productos",
+			"item": [
+				{
+					"name": "Listar Productos (Público)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products?page=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página para paginación (10 elementos por página)"
+								}
+							]
+						},
+						"description": "Obtiene la lista paginada de productos con su divisa base asociada (`currency`). Endpoint público."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Detalle de Producto por ID (Público)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Obtiene la información individual de un producto mediante su ID. Endpoint público."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Producto (Protegido)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"    if (data.data && data.data.id) {",
+									"        pm.collectionVariables.set(\"product_id\", data.data.id);",
+									"        console.log(\"Variable product_id actualizada con el nuevo ID:\", data.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{bearer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Camiseta Deportiva Transpirable\",\n    \"description\": \"Camiseta de alto rendimiento fabricada con poliéster técnico transpirable.\",\n    \"price\": 29.99,\n    \"currency_id\": 1,\n    \"tax_cost\": 4.80,\n    \"manufacturing_cost\": 12.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Crea un nuevo producto en el catálogo. Requiere token de autenticación Bearer (`auth:sanctum`). Al crearse con éxito, guarda el nuevo ID en la variable `product_id`."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Producto (Protegido)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{bearer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Camiseta Deportiva Edición Pro\",\n    \"description\": \"Camiseta de alto rendimiento mejorada con costuras reforzadas.\",\n    \"price\": 34.50,\n    \"currency_id\": 1,\n    \"tax_cost\": 5.50,\n    \"manufacturing_cost\": 13.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Actualiza los datos de un producto existente. Requiere token Bearer (`auth:sanctum`)."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Producto (Protegido)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{bearer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Elimina un producto del catálogo por su ID. Requiere token Bearer (`auth:sanctum`). Devuelve un código HTTP 204 No Content."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. Precios Multidivisa",
+			"item": [
+				{
+					"name": "Listar Precios de un Producto (Público)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}/prices",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}",
+								"prices"
+							]
+						},
+						"description": "Lista todos los precios alternativos/multidivisa registrados para el producto indicado en `{{product_id}}`. Endpoint público."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar Precio en Divisa Alternativa (Protegido)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{bearer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currency_id\": 2,\n    \"price\": 27.50\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}/prices",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}",
+								"prices"
+							]
+						},
+						"description": "Registra un precio específico en una divisa (por ejemplo EUR con id 2) para el producto. Requiere token Bearer (`auth:sanctum`). Valida que no exista un precio previo para esa misma divisa."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
